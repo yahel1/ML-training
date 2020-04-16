@@ -26,6 +26,7 @@ def plot_comparable(column_num, Xdata_and_name, digits_label):
 
 
 def plot_confusion_mat(y_test, y_pred):
+    plt.figure()
     n_classes = 10
     conf_mat = confusion_matrix(y_test, y_pred, range(n_classes))
     ax = plt.subplot()
@@ -75,26 +76,25 @@ if __name__ == '__main__':
     plot_comparable(example_num, Xdata_and_name, y)
 
     # 4: Train a classification model
-    train_accuracy = np.zeros(n)
-    test_accuracy = np.zeros(n)
+    classifier = svm.SVC(gamma=0.001)
+    accuracy = np.zeros(n)
     for k in range(n):
         U_k = U[:, :k]
         X_Recovered = U_k @  U_k.T @ X_zero_mean
-        # scores = cross_val_score(classifier, X_Recovered.T, y, cv=5)
-        X_train, X_test, y_train, y_test = train_test_split(X_Recovered.T, y, test_size=0.2)
-        classifier = svm.SVC(gamma=0.001)
-        classifier.fit(X_train, y_train)
-        y_pred = classifier.predict(X_test)
-        test_accuracy[k] = classifier.score(X_test, y_test)
-        train_accuracy[k] = classifier.score(X_train, y_train)
+        scores = cross_val_score(classifier, X_Recovered.T, y, cv=5)
+        accuracy[k] = np.mean(scores)
 
-    plt.plot(range(n), test_accuracy, 'o-')
+    plt.plot(range(n), accuracy, 'o-')
     plt.xlabel('k', fontsize=16)
     plt.ylabel('Test accuracy', fontsize=16)
-    best_k = np.argmax(test_accuracy)
-    print(f'The highest accuracy value is {100*test_accuracy[best_k]}% for k={best_k}')
+    best_k = np.argmax(accuracy)
+    print(f'The highest accuracy value is {100*accuracy[best_k]:.2f}% for k={best_k}')
 
-    plt.figure()
+    U_k = U[:, :best_k]
+    X_Recovered = U_k @ U_k.T @ X_zero_mean
+    X_train, X_test, y_train, y_test = train_test_split(X_Recovered.T, y, test_size=0.2)
+    classifier.fit(X_train, y_train)
+    y_pred = classifier.predict(X_test)
     plot_confusion_mat(y_test, y_pred)
 
 
